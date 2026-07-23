@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hostel Security Dashboard</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #eee;
+        margin: 0;
+        padding: 20px;
+    }
+    h1 {
+        color: #ff4444;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        padding: 10px;
+        border-bottom: 1px solid #333;
+        text-align: left;
+    }
+    th {
+        background: #222;
+        color: #ff4444;
+    }
+    tr:hover {
+        background: #1a1a1a;
+    }
+    img {
+        border-radius: 6px;
+        border: 1px solid #444;
+    }
+    #status {
+        margin-top: 10px;
+        color: #888;
+        font-size: 0.9em;
+    }
+    .no-alerts {
+        color: #666;
+        padding: 20px;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+<h1>🚨 Hostel Security Dashboard</h1>
+<div id="status">Waiting for alerts...</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Alert Type</th>
+            <th>Location</th>
+            <th>Camera</th>
+            <th>Severity</th>
+            <th>Description</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Photo</th>
+</tr>
+        </tr>
+    </thead>
+    <tbody id="alertTable">
+        <tr><td colspan="7" class="no-alerts">No alerts yet</td></tr>
+
+    </tbody>
+</table>
+
+<script>
+async function loadAlerts() {
+    try {
+        const response = await fetch("/api/alerts");
+        const alerts = await response.json();
+
+        const statusEl = document.getElementById("status");
+        const tableEl = document.getElementById("alertTable");
+
+        if (alerts.length === 0) {
+            tableEl.innerHTML = `<tr><td colspan="7" class="no-alerts">No alerts yet</td></tr>`;
+
+            statusEl.textContent = "Monitoring... no alerts yet";
+            return;
+        }
+
+        // show newest first
+        const reversed = [...alerts].reverse();
+
+        let html = "";
+        reversed.forEach(alert => {
+            let color = alert.alert_type === "Intruder" ? "red" : "lime";
+             html += `
+             <tr>
+                <td style="color:${color};font-weight:bold;">
+                    ${alert.alert_type || "Unknown"}
+                </td>
+
+                <td>${alert.location || ""}</td>
+
+                <td>${alert.camera_id || ""}</td>
+
+                <td>${alert.severity || ""}</td>
+
+                <td>${alert.description || ""}</td>
+
+                <td>${alert.in_time || "-"}</td>
+
+                <td>${alert.out_time || "-"}</td>
+
+                <td>${alert.date || ""}</td>
+
+                <td>${alert.time || ""}</td>
+
+                <td>
+                     ${
+                    alert.image
+                    ? `<img src="/alerts/${alert.image}" width="140">`
+                    : ""
+                    }
+                    </td>
+             </tr>`;
+            });
+  
+
+        tableEl.innerHTML = html;
+        statusEl.textContent = `Last updated: ${new Date().toLocaleTimeString()} | Total alerts: ${alerts.length}`;
+
+    } catch (err) {
+        console.error("Failed to load alerts:", err);
+        document.getElementById("status").textContent = "Error connecting to backend";
+    }
+}
+
+loadAlerts();
+setInterval(loadAlerts, 2000);
+</script>
+
+</body>
+</html>
